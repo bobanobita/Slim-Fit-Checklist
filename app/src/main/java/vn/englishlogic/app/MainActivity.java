@@ -30,6 +30,7 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -63,8 +64,19 @@ public final class MainActivity extends Activity {
         setContentView(webView);
 
         configureWebView();
-        if (state == null) webView.loadUrl(APP_URL);
-        else webView.restoreState(state);
+        if (state == null || webView.restoreState(state) == null) loadBundledHome();
+    }
+
+    private void loadBundledHome() {
+        try (InputStream input = getAssets().open("www/index.html"); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
+            String html = output.toString(StandardCharsets.UTF_8.name());
+            webView.loadDataWithBaseURL(APP_URL, html, "text/html", "UTF-8", APP_URL);
+        } catch (IOException error) {
+            webView.loadDataWithBaseURL(APP_URL, offlinePage(), "text/html", "UTF-8", APP_URL);
+        }
     }
 
     private void configureWebView() {
@@ -141,6 +153,7 @@ public final class MainActivity extends Activity {
         if (lower.endsWith(".js") || lower.endsWith(".mjs")) return "text/javascript";
         if (lower.endsWith(".css")) return "text/css";
         if (lower.endsWith(".json")) return "application/json";
+        if (lower.endsWith(".txt")) return "text/plain";
         if (lower.endsWith(".webmanifest")) return "application/manifest+json";
         if (lower.endsWith(".svg")) return "image/svg+xml";
         if (lower.endsWith(".png")) return "image/png";
