@@ -47,6 +47,7 @@ jobs:
           disable-animations: true
           script: sh .github/scripts/test-offline-android.sh
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: English-Logic-v1.2.0-APK
           path: app/build/outputs/apk/debug/app-debug.apk

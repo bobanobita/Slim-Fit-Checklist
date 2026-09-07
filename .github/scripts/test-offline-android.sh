@@ -6,6 +6,20 @@ dump_ui() {
   adb pull /sdcard/english-logic-window.xml /tmp/english-logic-window.xml >/dev/null
 }
 
+wait_for_ui_text() {
+  expected="$1"
+  for _ in $(seq 1 20); do
+    if dump_ui && grep -q "$expected" /tmp/english-logic-window.xml; then
+      return 0
+    fi
+    sleep 2
+  done
+  echo "Timed out waiting for UI text: $expected"
+  cat /tmp/english-logic-window.xml || true
+  adb logcat -d -t 300 || true
+  return 1
+}
+
 adb uninstall vn.englishlogic.app >/dev/null 2>&1 || true
 adb install app/build/outputs/apk/debug/app-debug.apk
 adb shell cmd uimode night no
@@ -13,11 +27,9 @@ adb shell svc wifi disable
 adb shell svc data disable
 adb shell am force-stop vn.englishlogic.app
 adb shell am start -W -n vn.englishlogic.app/.MainActivity
-sleep 10
 adb shell dumpsys activity activities > /tmp/activities.txt
 grep -q "vn.englishlogic.app/.MainActivity" /tmp/activities.txt
-dump_ui
-grep -q "English Logic" /tmp/english-logic-window.xml
+wait_for_ui_text "English Logic"
 grep -q "Bắt đầu Buổi 01" /tmp/english-logic-window.xml
 grep -q "Bật giao diện tối" /tmp/english-logic-window.xml
 if grep -Eiq "auth\.openai\.com|Tiếp tục với ChatGPT|Đăng nhập" /tmp/english-logic-window.xml; then exit 1; fi
@@ -25,9 +37,7 @@ if grep -Eiq "auth\.openai\.com|Tiếp tục với ChatGPT|Đăng nhập" /tmp/e
 # A process restart must still open the bundled Home while fully offline.
 adb shell am force-stop vn.englishlogic.app
 adb shell am start -W -n vn.englishlogic.app/.MainActivity
-sleep 4
-dump_ui
-grep -q "English Logic" /tmp/english-logic-window.xml
+wait_for_ui_text "English Logic"
 grep -q "Bắt đầu Buổi 01" /tmp/english-logic-window.xml
 grep -q "Bật giao diện tối" /tmp/english-logic-window.xml
 if grep -Eiq "auth\.openai\.com|Tiếp tục với ChatGPT|Đăng nhập" /tmp/english-logic-window.xml; then exit 1; fi
