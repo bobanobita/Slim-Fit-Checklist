@@ -17,22 +17,31 @@ import android.view.View;
 import android.view.Window;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
+import android.webkit.ServiceWorkerClient;
+import android.webkit.ServiceWorkerController;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public final class MainActivity extends Activity {
-    private static final String APP_URL = "https://english-logic-v0.nguyenphuong230301.chatgpt.site";
+    private static final String APP_URL = "https://english-logic-v0.nguyenphuong230301.chatgpt.site/";
     private static final String APP_HOST = "english-logic-v0.nguyenphuong230301.chatgpt.site";
     private static final int FILE_CHOOSER_REQUEST = 501;
     private static final int MICROPHONE_REQUEST = 502;
@@ -73,6 +82,14 @@ public final class MainActivity extends Activity {
         webView.addJavascriptInterface(new AndroidBridge(), "EnglishLogicAndroid");
         webView.setWebViewClient(new EnglishLogicClient());
         webView.setWebChromeClient(new EnglishLogicChromeClient());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            ServiceWorkerController.getInstance().setServiceWorkerClient(new ServiceWorkerClient() {
+                @Override
+                public WebResourceResponse shouldInterceptRequest(WebResourceRequest request) {
+                    return localAssetResponse(request.getUrl());
+                }
+            });
+        }
         webView.setDownloadListener((url, userAgent, disposition, mimeType, size) -> {
             if (url != null && url.startsWith("blob:")) {
                 exportBlob(url, fileNameFromDisposition(disposition));
@@ -82,12 +99,54 @@ public final class MainActivity extends Activity {
         });
     }
 
-    private boolean isTrustedInAppHost(Uri uri) {
+    private boolean isAppHost(Uri uri) {
         if (!"https".equalsIgnoreCase(uri.getScheme())) return false;
         String host = uri.getHost();
-        if (host == null) return false;
-        host = host.toLowerCase(Locale.ROOT);
-        return host.equals(APP_HOST) || host.equals("chatgpt.com") || host.endsWith(".chatgpt.com") || host.equals("openai.com") || host.endsWith(".openai.com");
+        return host != null && APP_HOST.equals(host.toLowerCase(Locale.ROOT));
+    }
+
+    private WebResourceResponse localAssetResponse(Uri uri) {
+        if (!isAppHost(uri)) return null;
+
+        String path = uri.getPath();
+        if (path == null || path.isEmpty() || "/".equals(path)) path = "/index.html";
+        if (path.endsWith("/")) path += "index.html";
+        if (path.contains("..") || path.indexOf('\0') >= 0) return notFoundResponse();
+
+        try {
+            InputStream input = getAssets().open("www" + path);
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Cache-Control", "no-cache");
+            headers.put("Access-Control-Allow-Origin", "https://" + APP_HOST);
+            return new WebResourceResponse(mimeType(path), "UTF-8", 200, "OK", headers, input);
+        } catch (IOException error) {
+            return notFoundResponse();
+        }
+    }
+
+    private WebResourceResponse notFoundResponse() {
+        return new WebResourceResponse(
+            "text/plain",
+            "UTF-8",
+            404,
+            "Not Found",
+            new HashMap<>(),
+            new ByteArrayInputStream("Not found".getBytes(StandardCharsets.UTF_8))
+        );
+    }
+
+    private String mimeType(String path) {
+        String lower = path.toLowerCase(Locale.ROOT);
+        if (lower.endsWith(".html")) return "text/html";
+        if (lower.endsWith(".js") || lower.endsWith(".mjs")) return "text/javascript";
+        if (lower.endsWith(".css")) return "text/css";
+        if (lower.endsWith(".json")) return "application/json";
+        if (lower.endsWith(".webmanifest")) return "application/manifest+json";
+        if (lower.endsWith(".svg")) return "image/svg+xml";
+        if (lower.endsWith(".png")) return "image/png";
+        if (lower.endsWith(".rsc")) return "text/x-component";
+        if (lower.endsWith(".woff2")) return "font/woff2";
+        return "application/octet-stream";
     }
 
     private void openExternal(Uri uri) {
@@ -119,7 +178,7 @@ public final class MainActivity extends Activity {
     }
 
     private String offlinePage() {
-        return "<!doctype html><html><meta name='viewport' content='width=device-width,initial-scale=1'><body style='margin:0;background:#07111f;color:#fff;font-family:sans-serif;display:grid;place-items:center;min-height:100vh'><main style='max-width:420px;padding:28px;text-align:center'><div style='width:64px;height:64px;display:grid;place-items:center;margin:auto;border:2px solid #8bc832;border-radius:18px;background:#06351d;font-weight:800'>EL</div><h1>Chưa thể kết nối</h1><p style='color:#a9bdcc;line-height:1.6'>Hãy kiểm tra Internet rồi thử lại. Dữ liệu học đã lưu trên máy không bị mất.</p><a href='" + APP_URL + "' style='display:inline-block;margin-top:10px;padding:13px 18px;border-radius:12px;background:#c9ff65;color:#07111f;text-decoration:none;font-weight:800'>Thử lại</a></main></body></html>";
+        return "<!doctype html><html><meta name='viewport' content='width=device-width,initial-scale=1'><body style='margin:0;background:#07111f;color:#fff;font-family:sans-serif;display:grid;place-items:center;min-height:100vh'><main style='max-width:420px;padding:28px;text-align:center'><div style='width:64px;height:64px;display:grid;place-items:center;margin:auto;border:2px solid #8bc832;border-radius:18px;background:#06351d;font-weight:800'>EL</div><h1>Không thể mở dữ liệu ứng dụng</h1><p style='color:#a9bdcc;line-height:1.6'>Hãy đóng rồi mở lại English Logic. Tiến độ đã lưu trên máy không bị mất.</p><a href='" + APP_URL + "' style='display:inline-block;margin-top:10px;padding:13px 18px;border-radius:12px;background:#c9ff65;color:#07111f;text-decoration:none;font-weight:800'>Mở lại</a></main></body></html>";
     }
 
     @Override
@@ -168,9 +227,15 @@ public final class MainActivity extends Activity {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             Uri uri = request.getUrl();
-            if (isTrustedInAppHost(uri)) return false;
+            if (isAppHost(uri)) return false;
             openExternal(uri);
             return true;
+        }
+
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+            WebResourceResponse local = localAssetResponse(request.getUrl());
+            return local != null ? local : super.shouldInterceptRequest(view, request);
         }
 
         @Override
