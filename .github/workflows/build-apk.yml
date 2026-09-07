@@ -34,7 +34,13 @@ jobs:
       - name: Create Gradle wrapper
         run: gradle wrapper --gradle-version 8.9
       - name: Build installable debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: |
+          set -euo pipefail
+          ./gradlew assembleDebug --no-daemon
+          unzip -l app/build/outputs/apk/debug/app-debug.apk > /tmp/apk-contents.txt
+          grep -q "assets/www/_next/static/chunks/.*\.js" /tmp/apk-contents.txt
+          grep -q "assets/www/_next/static/chunks/.*\.css" /tmp/apk-contents.txt
+          test "$(stat -c %s app/build/outputs/apk/debug/app-debug.apk)" -gt 300000
       - name: Enable Android emulator acceleration
         run: sudo chmod 666 /dev/kvm
       - name: Test offline persistence on Pixel 5 / Android 14

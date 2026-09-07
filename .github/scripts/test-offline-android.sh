@@ -23,8 +23,10 @@ wait_for_ui_text() {
 adb uninstall vn.englishlogic.app >/dev/null 2>&1 || true
 adb install app/build/outputs/apk/debug/app-debug.apk
 adb shell cmd uimode night no
+adb shell cmd connectivity airplane-mode enable
 adb shell svc wifi disable
 adb shell svc data disable
+adb shell settings put global http_proxy 127.0.0.1:9
 adb shell am force-stop vn.englishlogic.app
 adb shell am start -W -n vn.englishlogic.app/.MainActivity
 adb shell dumpsys activity activities > /tmp/activities.txt

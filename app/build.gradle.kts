@@ -6,6 +6,11 @@ android {
     namespace = "vn.englishlogic.app"
     compileSdk = 35
 
+    androidResources {
+        // AAPT normally drops directories beginning with "_"; Next.js uses _next.
+        ignoreAssetsPattern = ""
+    }
+
     defaultConfig {
         applicationId = "vn.englishlogic.app"
         minSdk = 23
