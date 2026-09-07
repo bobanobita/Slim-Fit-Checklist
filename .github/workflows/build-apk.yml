@@ -46,7 +46,7 @@ jobs:
           profile: pixel_5
           disable-animations: true
           script: |
-            set -euo pipefail
+            set -eu
 
             cat > /tmp/tap-ui.py <<'PY'
             import re
@@ -81,7 +81,7 @@ jobs:
             }
 
             tap_visible() {
-              python3 /tmp/tap-ui.py "$1"
+              python3 /tmp/tap-ui.py "$1" || return 1
               sleep 1
             }
 
@@ -98,6 +98,7 @@ jobs:
 
             adb uninstall vn.englishlogic.app >/dev/null 2>&1 || true
             adb install app/build/outputs/apk/debug/app-debug.apk
+            adb shell cmd uimode night no
             adb shell svc wifi disable
             adb shell svc data disable
             adb shell am force-stop vn.englishlogic.app
