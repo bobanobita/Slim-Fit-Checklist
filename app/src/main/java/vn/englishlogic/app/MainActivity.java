@@ -340,7 +340,6 @@ public final class MainActivity extends Activity {
         public void scanPairingQr() {
             runOnUiThread(() -> {
                 IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
-                integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE_TYPES);
                 integrator.setPrompt("Quét QR ghép nối trên English Logic PC");
                 integrator.setBeepEnabled(false);
                 integrator.setOrientationLocked(false);
