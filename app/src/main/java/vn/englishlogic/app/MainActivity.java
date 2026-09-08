@@ -29,6 +29,11 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+
+import org.json.JSONObject;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -50,6 +55,7 @@ public final class MainActivity extends Activity {
     private WebView webView;
     private ValueCallback<Uri[]> fileCallback;
     private PermissionRequest pendingWebPermission;
+    private SecureCredentialStore credentialStore;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -57,6 +63,7 @@ public final class MainActivity extends Activity {
         Window window = getWindow();
         window.setStatusBarColor(Color.rgb(7, 17, 31));
         window.setNavigationBarColor(Color.rgb(7, 17, 31));
+        credentialStore = new SecureCredentialStore(this);
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(7, 17, 31));
@@ -122,6 +129,9 @@ public final class MainActivity extends Activity {
 
         String path = uri.getPath();
         if (path == null || path.isEmpty() || "/".equals(path)) path = "/index.html";
+        // Bundled learning assets stay offline-first. Pairing/device APIs are the
+        // only same-host paths allowed to reach HTTPS when a user opts into linking.
+        if (path.startsWith("/api/")) return null;
         if (path.endsWith("/")) path += "index.html";
         if (path.contains("..") || path.indexOf('\0') >= 0) return notFoundResponse();
 
@@ -209,12 +219,23 @@ public final class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (scanResult != null) {
+            if (scanResult.getContents() != null) dispatchPairingScan(scanResult.getContents());
+            return;
+        }
         if (requestCode == FILE_CHOOSER_REQUEST && fileCallback != null) {
             Uri[] result = null;
             if (resultCode == RESULT_OK && data != null && data.getData() != null) result = new Uri[]{data.getData()};
             fileCallback.onReceiveValue(result);
             fileCallback = null;
         }
+    }
+
+    private void dispatchPairingScan(String payload) {
+        String script = "window.dispatchEvent(new CustomEvent('englishlogic:pairing-scan',{detail:"
+            + JSONObject.quote(payload) + "}));";
+        webView.evaluateJavascript(script, null);
     }
 
     @Override
@@ -295,6 +316,38 @@ public final class MainActivity extends Activity {
     }
 
     public final class AndroidBridge {
+        @JavascriptInterface
+        public String createDeviceToken() {
+            return credentialStore.createOpaqueToken();
+        }
+
+        @JavascriptInterface
+        public boolean saveSyncCredential(String accountId, String deviceId, String deviceToken) {
+            return credentialStore.save(accountId, deviceId, deviceToken);
+        }
+
+        @JavascriptInterface
+        public String getSyncCredential() {
+            return credentialStore.load();
+        }
+
+        @JavascriptInterface
+        public boolean hasSyncCredential() {
+            return credentialStore.hasCredential();
+        }
+
+        @JavascriptInterface
+        public void scanPairingQr() {
+            runOnUiThread(() -> {
+                IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
+                integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE_TYPES);
+                integrator.setPrompt("Quét QR ghép nối trên English Logic PC");
+                integrator.setBeepEnabled(false);
+                integrator.setOrientationLocked(false);
+                integrator.initiateScan();
+            });
+        }
+
         @JavascriptInterface
         public void showMessage(String message) {
             runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show());

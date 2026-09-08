@@ -15,8 +15,8 @@ android {
         applicationId = "vn.englishlogic.app"
         minSdk = 23
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.3.0"
     }
 
     buildTypes {
@@ -30,4 +30,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+}
+
+dependencies {
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }

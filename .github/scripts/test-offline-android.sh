@@ -36,6 +36,16 @@ grep -q "Bắt đầu Buổi 01" /tmp/english-logic-window.xml
 grep -q "Bật giao diện tối" /tmp/english-logic-window.xml
 if grep -Eiq "auth\.openai\.com|Tiếp tục với ChatGPT|Đăng nhập" /tmp/english-logic-window.xml; then exit 1; fi
 
+# Pairing is optional and its controls remain reachable while fully offline.
+dump_ui
+coords="$(python3 -c 'import re,sys,xml.etree.ElementTree as ET; root=ET.parse(sys.argv[1]).getroot(); node=next((n for n in root.iter("node") if n.attrib.get("content-desc")==sys.argv[2]), None); m=re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.attrib["bounds"] if node is not None else ""); print(f"{(int(m[1])+int(m[3]))//2} {(int(m[2])+int(m[4]))//2}" if m else "")' /tmp/english-logic-window.xml "Quản lý dữ liệu")"
+test -n "$coords"
+adb shell input tap $coords
+wait_for_ui_text "Đồng bộ với máy tính"
+grep -q "Quét QR trên PC" /tmp/english-logic-window.xml
+grep -q "Không email, mật khẩu hay ChatGPT OAuth" /tmp/english-logic-window.xml
+adb shell input keyevent 4
+
 # A process restart must still open the bundled Home while fully offline.
 adb shell am force-stop vn.englishlogic.app
 adb shell am start -W -n vn.englishlogic.app/.MainActivity

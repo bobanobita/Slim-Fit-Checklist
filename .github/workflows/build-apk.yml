@@ -22,6 +22,9 @@ jobs:
           grep -R -q "english-logic-local-progress-v2" app/src/main/assets/www
           grep -R -q "english-logic-local-identity-v1" app/src/main/assets/www
           grep -R -q "Bật giao diện tối" app/src/main/assets/www
+          grep -R -q "Đồng bộ với máy tính" app/src/main/assets/www
+          grep -R -q "Tạo QR và mã ghép nối" app/src/main/assets/www
+          grep -R -q "englishlogic:pairing-scan" app/src/main/assets/www
           if grep -R -Eiq "auth\.openai\.com|Tiếp tục với ChatGPT|client_id|code_verifier|code_challenge" app/src/main/assets/www; then
             echo "OAuth/login marker found in bundled content"
             exit 1
@@ -55,7 +58,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: English-Logic-v1.2.0-APK
+          name: English-Logic-v1.3.0-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
