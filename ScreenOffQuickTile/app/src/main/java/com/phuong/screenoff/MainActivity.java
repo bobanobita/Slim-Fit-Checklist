@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.StatusBarManager;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.graphics.drawable.Icon;
 import android.os.Build;
@@ -13,10 +14,14 @@ import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
+    private static final String PREFS = "screenoff_settings";
+    private static final String KEY_DOUBLE_TAP_HOME = "double_tap_home";
+
     private int dp(float value) {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
@@ -37,7 +42,7 @@ public class MainActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
-        root.setPadding(dp(24), dp(48), dp(24), dp(24));
+        root.setPadding(dp(24), dp(40), dp(24), dp(24));
 
         TextView title = new TextView(this);
         title.setText(R.string.title);
@@ -51,8 +56,19 @@ public class MainActivity extends Activity {
         info.setTextSize(16);
         info.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams infoLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        infoLp.setMargins(0, dp(16), 0, dp(24));
+        infoLp.setMargins(0, dp(16), 0, dp(20));
         root.addView(info, infoLp);
+
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        Switch doubleTapSwitch = new Switch(this);
+        doubleTapSwitch.setText(R.string.double_tap_home);
+        doubleTapSwitch.setTextSize(16);
+        doubleTapSwitch.setChecked(prefs.getBoolean(KEY_DOUBLE_TAP_HOME, true));
+        doubleTapSwitch.setOnCheckedChangeListener((buttonView, isChecked) ->
+                prefs.edit().putBoolean(KEY_DOUBLE_TAP_HOME, isChecked).apply());
+        LinearLayout.LayoutParams switchLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        switchLp.setMargins(0, dp(4), 0, dp(16));
+        root.addView(doubleTapSwitch, switchLp);
 
         Button accessibilityButton = makeButton(getString(R.string.enable_accessibility));
         accessibilityButton.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
