@@ -2,7 +2,8 @@
 <resources>
     <string name="app_name">Screen Off</string>
     <string name="title">Tắt màn hình</string>
-    <string name="instructions">1. Bật quyền Trợ năng cho Screen Off.\n2. Bấm nút bên dưới để khóa màn hình.\n3. Thêm ô “Tắt màn hình” vào Quick Settings để dùng thay nút nguồn.</string>
+    <string name="instructions">1. Bật quyền Trợ năng cho Screen Off.\n2. Double tap vào khoảng trống trên màn hình Home để tắt màn hình.\n3. Quick Settings vẫn hoạt động như trước.</string>
+    <string name="double_tap_home">Double tap ở màn hình Home để tắt màn hình</string>
     <string name="enable_accessibility">Bật quyền Trợ năng</string>
     <string name="lock_now">Tắt màn hình ngay</string>
     <string name="add_tile">Thêm vào Quick Settings</string>
@@ -11,6 +12,6 @@
     <string name="tile_already_added">Ô Tắt màn hình đã có sẵn.</string>
     <string name="tile_add_manual">Nếu chưa thấy ô: kéo Quick Settings xuống → Chỉnh sửa → kéo “Tắt màn hình” vào vùng đang dùng.</string>
     <string name="accessibility_service_name">Screen Off – khóa màn hình</string>
-    <string name="accessibility_description">Dịch vụ này chỉ dùng lệnh hệ thống để khóa màn hình. Không đọc hoặc thu thập nội dung màn hình.</string>
+    <string name="accessibility_description">Dịch vụ này dùng lệnh hệ thống để khóa màn hình và nhận hai lần chạm ngắn khi đang ở màn hình Home. Không đọc hoặc thu thập nội dung màn hình.</string>
     <string name="enable_accessibility_first">Hãy bật quyền Trợ năng cho Screen Off trước.</string>
 </resources>
