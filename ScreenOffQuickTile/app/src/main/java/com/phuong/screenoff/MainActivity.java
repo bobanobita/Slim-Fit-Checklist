@@ -5,6 +5,7 @@ import android.app.StatusBarManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.graphics.Typeface;
+import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -75,7 +76,8 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             StatusBarManager manager = getSystemService(StatusBarManager.class);
             ComponentName component = new ComponentName(this, ScreenOffTileService.class);
-            manager.requestAddTileService(component, getString(R.string.tile_label), getDrawable(R.drawable.ic_screen_off), getMainExecutor(), result -> {
+            Icon icon = Icon.createWithResource(this, R.drawable.ic_screen_off);
+            manager.requestAddTileService(component, getString(R.string.tile_label), icon, getMainExecutor(), result -> {
                 String msg;
                 if (result == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED) msg = getString(R.string.tile_added);
                 else if (result == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED) msg = getString(R.string.tile_already_added);
