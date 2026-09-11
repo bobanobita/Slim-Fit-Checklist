@@ -26,6 +26,6 @@ jobs:
         run: gradle :app:assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: ScreenOff-v1.0-debug
+          name: ScreenOff-v1.1.1-debug
           path: ScreenOffQuickTile/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
